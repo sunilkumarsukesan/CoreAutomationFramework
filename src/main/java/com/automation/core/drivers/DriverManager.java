@@ -1,5 +1,6 @@
 package com.automation.core.drivers;
 
+import com.automation.core.config.ConfigManager;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.edge.EdgeDriver;
@@ -9,7 +10,8 @@ import org.openqa.selenium.edge.EdgeOptions;
 public class DriverManager {
     private static ThreadLocal<WebDriver> driver = new ThreadLocal<>();
 
-    public static void initializeDriver(String browser) {
+    public static void initializeDriver() {
+        String browser = ConfigManager.getBrowser();
         if (browser.equalsIgnoreCase("chrome")) {
             ChromeOptions options = new ChromeOptions();
             options.addArguments("--start-maximized");
