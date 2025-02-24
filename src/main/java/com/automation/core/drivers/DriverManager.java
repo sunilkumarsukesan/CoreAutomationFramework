@@ -1,38 +1,37 @@
 package com.automation.core.drivers;
 
 import com.automation.core.config.ConfigManager;
+import com.automation.core.utils.LoggerManager;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.edge.EdgeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.edge.EdgeOptions;
+import org.slf4j.Logger;
 
 public class DriverManager {
-    private static ThreadLocal<WebDriver> driver = new ThreadLocal<>();
-
-    public static void initializeDriver() {
-        String browser = ConfigManager.getBrowser();
-        if (browser.equalsIgnoreCase("chrome")) {
-            ChromeOptions options = new ChromeOptions();
-            options.addArguments("--start-maximized");
-            driver.set(new ChromeDriver(options));
-        } else if (browser.equalsIgnoreCase("edge")) {
-            EdgeOptions options = new EdgeOptions();
-            options.addArguments("--start-maximized");
-            driver.set(new EdgeDriver(options));
-        } else {
-            throw new IllegalArgumentException("Unsupported browser: " + browser);
-        }
-    }
+    private static final Logger logger = LoggerManager.getLogger(DriverManager.class);
+    private static WebDriver driver;
 
     public static WebDriver getDriver() {
-        return driver.get();
+        if (driver == null) {
+            String browser = ConfigManager.getBrowser();
+            logger.info("Initializing browser: " + browser);
+
+            if ("chrome".equalsIgnoreCase(browser)) {
+                driver = new ChromeDriver();
+            } else {
+                logger.error("Unsupported browser: " + browser);
+                throw new IllegalArgumentException("Unsupported browser: " + browser);
+            }
+
+            logger.info("Browser initialized successfully.");
+        }
+        return driver;
     }
 
     public static void quitDriver() {
-        if (driver.get() != null) {
-            driver.get().quit();
-            driver.remove();
+        if (driver != null) {
+            logger.info("Closing the browser...");
+            driver.quit();
+            driver = null;
         }
     }
 }
