@@ -24,7 +24,6 @@
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
       <version>7.11.0</version>
-      <scope>test</scope>
     </dependency>
     <!-- https://mvnrepository.com/artifact/io.cucumber/cucumber-java -->
     <dependency>
@@ -64,6 +63,20 @@
       <artifactId>poi</artifactId>
       <version>5.4.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.testng</groupId>
+      <artifactId>testng</artifactId>
+      <version>7.11.0</version>
+      <scope>compile</scope>
+    </dependency>
     <!-- Add other dependencies as needed -->
+
+    <!-- https://mvnrepository.com/artifact/io.rest-assured/rest-assured -->
+    <dependency>
+      <groupId>io.rest-assured</groupId>
+      <artifactId>rest-assured</artifactId>
+      <version>5.5.1</version>
+    </dependency>
+
   </dependencies>
 </project>
