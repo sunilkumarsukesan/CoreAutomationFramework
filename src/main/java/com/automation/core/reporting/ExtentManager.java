@@ -3,6 +3,7 @@ package com.automation.core.reporting;
 import com.aventstack.extentreports.ExtentReports;
 import com.aventstack.extentreports.reporter.ExtentSparkReporter;
 import com.aventstack.extentreports.reporter.configuration.Theme;
+import org.testng.annotations.AfterSuite;
 
 public class ExtentManager {
     private static ExtentReports extent;
@@ -21,5 +22,12 @@ public class ExtentManager {
             extent.setSystemInfo("Java Version", System.getProperty("java.version"));
         }
         return extent;
+    }
+
+    @AfterSuite
+    public void tearDown() {
+        if (extent != null) {
+            extent.flush();
+        }
     }
 }
