@@ -23,11 +23,4 @@ public class ExtentManager {
         }
         return extent;
     }
-
-    @AfterSuite
-    public void tearDown() {
-        if (extent != null) {
-            extent.flush();
-        }
-    }
 }

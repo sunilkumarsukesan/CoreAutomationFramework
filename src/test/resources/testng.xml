@@ -5,7 +5,7 @@
     </listeners>
     <test name="Framework Validation Test">
         <classes>
-            <class name="com.automation.core.tests.FrameworkValidationTest"/>
+            <class name="com.automation.tests.FrameworkValidationTest"/>
         </classes>
     </test>
 </suite>

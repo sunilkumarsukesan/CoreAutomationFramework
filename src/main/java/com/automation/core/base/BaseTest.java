@@ -1,8 +1,8 @@
 package com.automation.core.base;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BaseTest {
-    protected static final Logger logger = LogManager.getLogger(BaseTest.class);
+    protected static final Logger logger = LoggerFactory.getLogger(BaseTest.class);
 }
