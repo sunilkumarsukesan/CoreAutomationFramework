@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class WebDriverUtils {
+public class WebDriverUtils implements WebDriverActions {
     private WebDriver driver;
     private WebDriverWait wait;
     private static final Logger logger = Logger.getLogger(WebDriverUtils.class.getName());
