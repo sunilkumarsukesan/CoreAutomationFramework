@@ -2,33 +2,44 @@ package com.automation.core.config;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 public class ConfigManager {
-    private static Properties properties = new Properties();
+    private static Properties coreProperties = new Properties();
+    private static Properties testSuiteProperties = new Properties();
 
     static {
-        try {
-            FileInputStream file = new FileInputStream("src/main/resources/config.properties");
-            properties.load(file);
+        loadCoreProperties();
+        loadTestSuiteProperties();
+    }
+
+    private static void loadCoreProperties() {
+        try (InputStream inputStream = ConfigManager.class.getClassLoader().getResourceAsStream("config.properties")) {
+            if (inputStream == null) {
+                throw new RuntimeException("CoreAutomationFramework config.properties not found in resources!");
+            }
+            coreProperties.load(inputStream);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load configuration file: " + e.getMessage());
+            throw new RuntimeException("Failed to load CoreAutomationFramework properties", e);
         }
     }
 
-    public static String getProperty(String key) {
-        return properties.getProperty(key, "");
+
+    private static void loadTestSuiteProperties() {
+        try {
+            FileInputStream testSuiteConfig = new FileInputStream("src/test/resources/config/config.properties"); // Assuming this is in TestAutomationSuite
+            testSuiteProperties.load(testSuiteConfig);
+        } catch (IOException ignored) {
+            // If TestAutomationSuite does not have a config, continue to default.
+        }
+    }
+
+    public static String getApplicationUrl() {
+        return testSuiteProperties.getProperty("baseUrl", coreProperties.getProperty("baseUrl"));
     }
 
     public static String getBrowser() {
-        return getProperty("browser");
-    }
-
-    public static String getBaseUrl() {
-        return getProperty("baseUrl");
-    }
-
-    public static int getTimeout() {
-        return Integer.parseInt(getProperty("timeout"));
+        return testSuiteProperties.getProperty("browser", coreProperties.getProperty("browser", "chrome")); // Default is Chrome
     }
 }
