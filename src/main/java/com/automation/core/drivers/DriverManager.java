@@ -1,14 +1,19 @@
 package com.automation.core.drivers;
 
+import com.automation.core.config.ConfigManager;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.function.Function;
 
 public class DriverManager {
     private static final ThreadLocal<RemoteWebDriver> driver = new ThreadLocal<>();
@@ -37,8 +42,8 @@ public class DriverManager {
                 default:
                     throw new IllegalArgumentException("Unsupported browser: " + browser);
             }
-            wait.set(new WebDriverWait(getDriver(), Duration.ofSeconds(10))); // ✅ Initialize WebDriverWait here
-            System.out.println("WebDriver initialized successfully.");
+            wait.set(new WebDriverWait(getDriver(), Duration.ofSeconds(ConfigManager.getTimeOut()))); // ✅ Initialize WebDriverWait here
+            System.out.println("WebDriver initialized successfully");
         }
     }
 
@@ -55,6 +60,19 @@ public class DriverManager {
             wait.set(new WebDriverWait(getDriver(), Duration.ofSeconds(10))); // ✅ Ensure wait is always initialized
         }
         return wait.get();
+    }
+
+    /**
+     * FluentWait implementation with polling.
+     */
+    public static <T> T fluentWait(Function<RemoteWebDriver, T> condition) {
+        FluentWait<RemoteWebDriver> fluentWait = new FluentWait<>(getDriver())
+                .withTimeout(Duration.ofSeconds(10))  // Max wait time
+                .pollingEvery(Duration.ofMillis(500)) // Retry every 500ms
+                .ignoring(NoSuchElementException.class)
+                .ignoring(StaleElementReferenceException.class);
+
+        return fluentWait.until(condition);
     }
 
     public static void quitDriver() {
