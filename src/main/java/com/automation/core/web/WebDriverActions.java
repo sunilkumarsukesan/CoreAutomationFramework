@@ -66,16 +66,21 @@ public interface WebDriverActions {
 
     /**
      * Clicks on an element using JavaScript Executor.
+     * @param locator The Selenium {@code By} locator.
+     */
+    void clickUsingJs(By locator);
+
+    /**
+     * Clicks on an element using JavaScript Executor.
      * @param ele The WebElement.
      */
     void clickUsingJs(WebElement ele);
 
     /**
      * Clicks on an element located by a specific locator type.
-     * @param locatorType The locator type.
-     * @param value The locator value.
+     * @param locator The Selenium {@code By} locator.
      */
-    void click(Locators locatorType, String value);
+    void click(By locator);
 
     /**
      * Clicks on an element without taking a snapshot.

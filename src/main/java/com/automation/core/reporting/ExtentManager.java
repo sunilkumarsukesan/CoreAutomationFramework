@@ -1,7 +1,11 @@
 package com.automation.core.reporting;
 
 import com.automation.core.drivers.DriverManager;
-import com.aventstack.extentreports.*;
+import com.automation.core.hooks.Hooks;
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.MediaEntityBuilder;
+import com.aventstack.extentreports.Status;
 import com.aventstack.extentreports.reporter.ExtentSparkReporter;
 import com.aventstack.extentreports.reporter.configuration.Theme;
 import org.openqa.selenium.OutputType;
@@ -11,15 +15,16 @@ import org.openqa.selenium.WebDriver;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.sql.Driver;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 public class ExtentManager {
     private static ExtentReports extent;
     private static final Logger logger = Logger.getLogger(ExtentManager.class.getName());
     private static final ThreadLocal<ExtentTest> testThread = new ThreadLocal<>();
+    private static final ConcurrentHashMap<Long, String> categoryMap = new ConcurrentHashMap<>();
     public static String reportFolder = "";
 
     /**
@@ -60,10 +65,16 @@ public class ExtentManager {
     /**
      * Creates a test case (Parent Node) and stores it in ThreadLocal.
      */
-    public static synchronized ExtentTest createTest(String testName, String description) {
+    public static synchronized ExtentTest createTest(String testName, String description, String category) {
         ExtentTest test = getExtentReports().createTest(testName, description);
         setTestThread(test);
-        System.out.println("Created Extent Test: " + testName);
+        long threadId = Thread.currentThread().getId();
+        categoryMap.put(threadId, category);
+
+        if (category != null && !category.isEmpty()) {
+            test.assignCategory(category);
+        }
+
         return test;
     }
 
@@ -82,16 +93,11 @@ public class ExtentManager {
     }
 
     /**
-     * Assigns category to the test.
+     * Retrieves category based on current thread
      */
-    public static void assignCategory(String category) {
-        ExtentTest test = getCurrentTest();
-        if (test != null) {
-            test.assignCategory(category);
-            System.out.println("Assigned category: " + category);
-        } else {
-            logger.warning("Failed to assign category: No active test found.");
-        }
+    private static String getCategoryForCurrentThread() {
+        long threadId = Thread.currentThread().getId();
+        return categoryMap.getOrDefault(threadId, "Uncategorized");
     }
 
     /**
@@ -141,28 +147,44 @@ public class ExtentManager {
     }
 
         /**
-         * Takes a screenshot and saves it in the report folder.
+         * Takes a screenshot and saves it in screenshot folder
          */
-    public static String takeScreenshot(WebDriver driver) {
-        if (driver == null) {
-            logger.warning("WebDriver instance is null. Screenshot not taken.");
-            return null;
+        public static String takeScreenshot(WebDriver driver) {
+            if (driver == null) {
+                logger.warning("WebDriver instance is null. Screenshot not taken.");
+                return null;
+            }
+
+            try {
+                File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+
+                // Retrieve the stored category
+                String category = getCategoryForCurrentThread();
+                if (category == null || category.isEmpty()) {
+                    category = "Uncategorized";
+                }
+
+                // Define screenshot folder inside report folder
+                String screenshotFolder = reportFolder + "/screenshots/" + category;
+                File screenshotDir = new File(screenshotFolder);
+                if (!screenshotDir.exists()) {
+                    screenshotDir.mkdirs();
+                }
+
+                // Define screenshot name
+                String screenshotName = "screenshot_" + System.currentTimeMillis() + ".jpg";
+                String screenshotPath = screenshotFolder + "/" + screenshotName;
+
+                // Save the screenshot
+                File destFile = new File(screenshotPath);
+                Files.copy(srcFile.toPath(), destFile.toPath());
+
+                return "screenshots/" + category + "/" + screenshotName; // Returning relative path
+            } catch (IOException e) {
+                logger.warning("Failed to capture screenshot: " + e.getMessage());
+                return null;
+            }
         }
-        try {
-            File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-            String screenshotName = "screenshot_" + System.currentTimeMillis() + ".jpg";
-            String screenshotPath = reportFolder + "/" + screenshotName;
-
-            File destFile = new File(screenshotPath);
-            Files.copy(srcFile.toPath(), destFile.toPath());
-
-            return screenshotName; // Returning only the filename
-        } catch (IOException e) {
-            logger.warning("Failed to capture screenshot: " + e.getMessage());
-            return null;
-        }
-    }
-
 
     /**
      * Flushes the Extent Reports instance at the end of execution.

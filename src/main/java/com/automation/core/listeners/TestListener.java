@@ -22,9 +22,13 @@ public class TestListener implements ITestListener {
 
     @Override
     public void onTestStart(ITestResult result) {
+        // Extract category from TestNG groups (if any)
+        String[] groups = result.getMethod().getGroups();
+        String category = (groups.length > 0) ? groups[0] : "DefaultCategory"; // Use first group or default
         ExtentTest test = ExtentManager.createTest(
                 result.getMethod().getMethodName(),
-                result.getMethod().getDescription()
+                result.getMethod().getDescription(),
+                category
         );
         ExtentManager.setTestThread(test); // Ensuring the test is stored
     }

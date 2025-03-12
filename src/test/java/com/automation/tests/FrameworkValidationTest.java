@@ -1,22 +1,14 @@
 package com.automation.tests;
 
 import com.automation.core.base.BaseTest;
-import com.automation.core.drivers.DriverManager;
 import com.automation.core.reporting.ExtentManager;
-import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
 public class FrameworkValidationTest extends BaseTest {
     private static final Logger logger = LogManager.getLogger(FrameworkValidationTest.class);
-
-    @BeforeClass
-    public void beforeClass() {
-        DriverManager.initDriver("chrome"); // Ensure driver is initialized before tests
-    }
-
 
     @Test
     public void validateFrameworkSetup() {

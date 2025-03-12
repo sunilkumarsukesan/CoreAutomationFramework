@@ -3,11 +3,14 @@ package com.automation.core.config;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Properties;
+import java.util.*;
+
+import static com.automation.core.utils.PasswordManagerUtil.decrypt;
 
 public class ConfigManager {
     private static Properties coreProperties = new Properties();
     private static Properties testSuiteProperties = new Properties();
+    private static String key = "MySecretKey12345";
 
     static {
         loadCoreProperties();
@@ -25,29 +28,46 @@ public class ConfigManager {
         }
     }
 
-
     private static void loadTestSuiteProperties() {
         try {
-            FileInputStream testSuiteConfig = new FileInputStream("src/test/resources/config/config.properties"); // Assuming this is in TestAutomationSuite
+            FileInputStream testSuiteConfig = new FileInputStream("src/test/resources/config/config.properties");
             testSuiteProperties.load(testSuiteConfig);
         } catch (IOException ignored) {
-            // If TestAutomationSuite does not have a config, continue to default.
         }
     }
 
-    public static String getApplicationUrl() {
-        return testSuiteProperties.getProperty("baseUrl", coreProperties.getProperty("baseUrl"));
+    public static String getEnvironment() {
+        return testSuiteProperties.getProperty("env", coreProperties.getProperty("env", "SIT")).trim();
+    }
+
+    public static String getApplicationUrl(String appName) {
+        String env = getEnvironment();
+        return testSuiteProperties.getProperty(env + "." + appName + ".URL", coreProperties.getProperty(env + "." + appName + ".URL")).trim();
+    }
+
+    public static String getApplicationUsername(String appName) {
+        String env = getEnvironment();
+        return testSuiteProperties.getProperty(env + "." + appName + ".username", coreProperties.getProperty(env + "." + appName + ".username")).trim();
+    }
+
+    public static String getApplicationPassword(String appName) throws Exception {
+        String env = getEnvironment();
+        return decrypt(testSuiteProperties.getProperty(env + "." + appName + ".password", coreProperties.getProperty(env + "." + appName + ".password")).trim(), key);
     }
 
     public static String getBrowser() {
-        return testSuiteProperties.getProperty("browser", coreProperties.getProperty("browser", "chrome")); // Default is Chrome
+        return testSuiteProperties.getProperty("browser", coreProperties.getProperty("browser", "chrome").trim());
     }
 
-    public static String getApplicationName() {
-        return testSuiteProperties.getProperty("ApplicationName", coreProperties.getProperty("ApplicationName", "Salesforce")); // Default is Chrome
+    public static String getApplication() {
+        return testSuiteProperties.getProperty("application", coreProperties.getProperty("application", "test").trim());
     }
 
     public static String getTestDataPath() {
         return testSuiteProperties.getProperty("testDataPath", coreProperties.getProperty("testDataPath", "src/test/resources/testData/")); // Default is Chrome
+    }
+
+    public static long getTimeOut() {
+        return Long.parseLong(testSuiteProperties.getProperty("timeout", coreProperties.getProperty("timeout", "10")));
     }
 }

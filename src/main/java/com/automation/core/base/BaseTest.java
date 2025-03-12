@@ -4,6 +4,7 @@ import com.automation.core.config.ConfigManager;
 import com.automation.core.drivers.DriverManager;
 import com.automation.core.listeners.TestListener;
 import com.automation.core.reporting.ExtentManager;
+import com.automation.core.utils.ExecutionUtils;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -17,7 +18,9 @@ public class BaseTest {
     public void setUp() {
         // Load config from TestAutomationSuite, fallback to Core config
         String browser = ConfigManager.getBrowser();
-        String baseUrl = ConfigManager.getApplicationUrl();
+        //takes the global config app value (needs to be configured for TestNG)
+        String application = ConfigManager.getApplication();
+        String baseUrl = ConfigManager.getApplicationUrl(application);
 
         DriverManager.initDriver(browser);  // Initialize Driver
         driver = DriverManager.getDriver(); // Assign instance to class variable

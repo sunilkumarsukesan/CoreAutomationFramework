@@ -10,23 +10,16 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import com.automation.core.config.ConfigManager;
 import com.automation.core.design.Locators;
+import com.automation.core.drivers.DriverManager;
 import com.automation.core.reporting.ExtentManager;
 import org.apache.commons.io.FileUtils;
-import org.openqa.selenium.Alert;
-import org.openqa.selenium.By;
-import org.openqa.selenium.ElementNotInteractableException;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.NoAlertPresentException;
-import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.NoSuchFrameException;
-import org.openqa.selenium.NoSuchWindowException;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.StaleElementReferenceException;
-import org.openqa.selenium.WebDriverException;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
@@ -80,141 +73,172 @@ public class WebDriverUtils implements WebDriverActions {
         ExtentManager.logStep("Element double clicked", "info");
     }
 
+
     public void waitForApperance(WebElement element) {
+        long timeout = ConfigManager.getTimeOut();
         try {
-            WebDriverWait wait = new WebDriverWait(getDriver(), Duration.ofSeconds(10));
+            WebDriverWait wait = new WebDriverWait(getDriver(), Duration.ofSeconds(timeout));
             wait.until(ExpectedConditions.visibilityOf(element));
         } catch (Exception e) {
-            ExtentManager.logStep("Element did not appear after 10 seconds", "fail", false);
-            Assert.fail("Element did not appear after 10 seconds");
+            ExtentManager.logStep("Element did not appear after " + timeout + " seconds", "fail", false);
+            Assert.fail("Element did not appear after " + timeout + " seconds");
         }
+    }
+
+    public void clickUsingJs(By locator) {
+        String text = "";
+        int attempts = 3; // Retry attempts for handling StaleElementReferenceException
+        WebElement ele = locateElement(locator);
+        for (int i = 0; i < attempts; i++) {
+            try {
+                getWait().until(ExpectedConditions.elementToBeClickable(ele));
+                getWait().until(ExpectedConditions.visibilityOf(ele));
+                DriverManager.fluentWait(driver -> {
+                    if (ele.isDisplayed() && ele.isEnabled()) {
+                        return ele;
+                    }
+                    return null;
+                });
+                text = ele.getText();
+                getDriver().executeScript("arguments[0].click()", ele);
+                return; // Exit loop if click is successful
+            } catch (StaleElementReferenceException e) {
+                ExtentManager.logStep("Retrying JS click due to StaleElementReferenceException: Attempt " + (i + 1), "warning");
+                getDriver().navigate().refresh();
+            } catch (WebDriverException e) {
+                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
+                Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
+            } catch (Exception e) {
+                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
+                Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
+            }
+        }
+
+        // If all retries fail, log failure
+        ExtentManager.logStep("Failed to click element using JS after multiple attempts: " + text, "fail");
+        Assert.fail("Failed to click element using JS after multiple attempts: " + text);
+    }
+
+    public void clickUsingJs(WebElement ele) {
+        String text = "";
+        int attempts = 3; // Retry attempts for handling StaleElementReferenceException
+        for (int i = 0; i < attempts; i++) {
+            try {
+                DriverManager.fluentWait(driver -> {
+                    if (ele.isDisplayed() && ele.isEnabled()) {
+                        return ele;
+                    }
+                    return null;
+                });
+                text = ele.getText();
+                getDriver().executeScript("arguments[0].click()", ele);
+                return; // Exit loop if click is successful
+            } catch (StaleElementReferenceException e) {
+                ExtentManager.logStep("Retrying JS click due to StaleElementReferenceException: Attempt " + (i + 1), "warning");
+                getDriver().navigate().refresh();
+            } catch (WebDriverException e) {
+                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
+                Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
+            } catch (Exception e) {
+                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
+                Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
+            }
+        }
+
+        // If all retries fail, log failure
+        ExtentManager.logStep("Failed to click element using JS after multiple attempts: " + text, "fail");
+        Assert.fail("Failed to click element using JS after multiple attempts: " + text);
     }
 
     @Override
     public void click(WebElement ele) {
         String text = "";
-        try {
+        int attempts = 3; // Retry attempts for handling StaleElementReferenceException
+
+        for (int i = 0; i < attempts; i++) {
             try {
-                Thread.sleep(500);
+                WebElement finalEle = ele;
+                DriverManager.fluentWait(driver -> {
+                    if (finalEle.isDisplayed() && finalEle.isEnabled()) {
+                        return finalEle;
+                    }
+                    return null;
+                });
+
                 getWait().until(ExpectedConditions.elementToBeClickable(ele));
+                getWait().until(ExpectedConditions.visibilityOf(ele));
                 text = ele.getText();
+
                 if (ele.isEnabled()) {
                     ele.click();
                 } else {
-                    getDriver().executeScript("arguments[0].click()", ele);
+                    clickUsingJs(ele);
                 }
+                return; // Exit loop if click is successful
+            } catch (StaleElementReferenceException e) {
+                // Re-locate element and retry
+                ExtentManager.logStep("Retrying click due to StaleElementReferenceException: Attempt " + (i + 1), "warning");
+                String locatorDetails = ele.toString();  // Example: "By.xpath: //span[text()='App Launcher']"
+                Locators locatorType = Locators.valueOf(locatorDetails.split(": ")[0].replace("By.", ""));  // Extracts 'xpath', 'id', etc.
+                String value = locatorDetails.split(": ", 2)[1];  // Extracts actual value
+                ele = locateElement(getBy(locatorType, value)); // Re-locate element before retry
+            } catch (ElementClickInterceptedException e) {
+                clickUsingJs(ele);
+                return;
+            } catch (WebDriverException e) {
+                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
+                Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
             } catch (Exception e) {
-                boolean bFound = false;
-                int totalTime = 0;
-                while (!bFound && totalTime < 10000) {
-                    try {
-                        Thread.sleep(500);
-                        ele.click();
-                        bFound = true;
-
-                    } catch (Exception e1) {
-                        bFound = false;
-                    }
-                    totalTime = totalTime + 500;
-                }
-                if (!bFound)
-                    ele.click();
+                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
+                Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
             }
-        } catch (StaleElementReferenceException e) {
-            ExtentManager.logStep("The Element " + text + " could not be clicked due to:" + e.getMessage(), "fail");
-            Assert.fail("The Element " + text + " could not be clicked due to:" + e.getMessage());
-        } catch (WebDriverException e) {
-            ExtentManager.logStep("The Element " + ele + " could not be clicked due to: " + e.getMessage(), "fail");
-            Assert.fail("The Element " + text + " could not be clicked due to:" + e.getMessage());
-        } catch (Exception e) {
-            ExtentManager.logStep("The Element " + ele + " could not be clicked due to: " + e.getMessage(), "fail");
-            Assert.fail("The Element " + text + " could not be clicked due to:" + e.getMessage());
         }
+
+        // If all retries fail, log failure
+        ExtentManager.logStep("Failed to click element after multiple attempts: " + text, "fail");
+        Assert.fail("Failed to click element after multiple attempts: " + text);
     }
 
-    public void clickUsingJs(WebElement ele) {
-        try {
-            ele.isDisplayed(); // @FindBy return the proxy even if it does not exist !!
-        } catch (NoSuchElementException e) {
-            ExtentManager.logStep("The Element " + ele + " is not found", "fail");
-            Assert.fail("The Element " + ele + " is not found");
-        }
-
+    public void click(By locator) {
         String text = "";
-        try {
-            try {
-                getDriver().executeScript("arguments[0].click()", ele);
-            } catch (Exception e) {
-                boolean bFound = false;
-                int totalTime = 0;
-                while (!bFound && totalTime < 10000) {
-                    try {
-                        Thread.sleep(500);
-                        getDriver().executeScript("arguments[0].click()", ele);
-                        bFound = true;
+        WebElement ele = locateElement(locator);
 
-                    } catch (Exception e1) {
-                        bFound = false;
-                    }
-                    totalTime = totalTime + 500;
-                }
-                if (!bFound)
-                    getDriver().executeScript("arguments[0].click()", ele);
-            }
-        } catch (StaleElementReferenceException e) {
-            ExtentManager.logStep("The Element " + text + " could not be clicked due to:" + e.getMessage(), "fail");
-            Assert.fail("The Element " + text + " could not be clicked due to:" + e.getMessage());
-        } catch (WebDriverException e) {
-            ExtentManager.logStep("The Element " + ele + " could not be clicked due to: " + e.getMessage(), "fail");
-            Assert.fail("The Element " + text + " could not be clicked due to:" + e.getMessage());
-        } catch (Exception e) {
-            ExtentManager.logStep("The Element " + ele + " could not be clicked due to: " + e.getMessage(), "fail");
-            Assert.fail("The Element " + text + " could not be clicked due to:" + e.getMessage());
-        }
-    }
+        int attempts = 3; // Retry attempts for handling StaleElementReferenceException
 
-    public void click(Locators locatorType, String value) {
-        String text = "";
-        WebElement ele = locateElement(getBy(locatorType, value));
-        try {
+        for (int i = 0; i < attempts; i++) {
             try {
-                Thread.sleep(500);
+                // Wait for element to be clickable and visible
                 getWait().until(ExpectedConditions.elementToBeClickable(ele));
+                getWait().until(ExpectedConditions.visibilityOf(ele));
+
                 text = ele.getText();
+
                 if (ele.isEnabled()) {
                     ele.click();
                 } else {
-                    getDriver().executeScript("arguments[0].click()", ele);
+                    clickUsingJs(locateElement(locator));
                 }
+                return; // Click successful, exit loop
+            } catch (StaleElementReferenceException e) {
+                ExtentManager.logStep("Retrying click due to StaleElementReferenceException: Attempt " + (i + 1), "warning");
+                ele = locateElement(locator); // Re-locate element before retry
+            } catch (ElementClickInterceptedException e) {
+                clickUsingJs(locateElement(locator));
+                return;
+            } catch (WebDriverException e) {
+                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
+                Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
             } catch (Exception e) {
-                boolean bFound = false;
-                int totalTime = 0;
-                while (!bFound && totalTime < 10000) {
-                    try {
-                        Thread.sleep(500);
-                        ele = locateElement(getBy(locatorType, value));
-                        ele.click();
-                        bFound = true;
-
-                    } catch (Exception e1) {
-                        bFound = false;
-                    }
-                    totalTime = totalTime + 500;
-                }
-                if (!bFound)
-                    ele.click();
+                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
+                Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
             }
-        } catch (StaleElementReferenceException e) {
-            ExtentManager.logStep("The Element " + text + " could not be clicked " + e.getMessage(), "fail");
-            Assert.fail("The Element " + text + " could not be clicked due to:" + e.getMessage());
-        } catch (WebDriverException e) {
-            ExtentManager.logStep("The Element " + ele + " could not be clicked \n" + e.getMessage(), "fail");
-            Assert.fail("The Element " + text + " could not be clicked due to:" + e.getMessage());
-        } catch (Exception e) {
-            ExtentManager.logStep("The Element " + ele + " could not be clicked \n" + e.getMessage(), "fail");
-            Assert.fail("The Element " + text + " could not be clicked due to:" + e.getMessage());
         }
+
+        // If all retries fail, log failure
+        ExtentManager.logStep("Failed to click element after multiple attempts: " + text, "fail");
+        Assert.fail("Failed to click element after multiple attempts: " + text);
     }
+
 
     public void clickWithNoSnap(WebElement ele) {
         String text = ele.getText();
@@ -899,6 +923,7 @@ public class WebDriverUtils implements WebDriverActions {
     }
 
     public void waitForDisapperance(WebElement element) {
+        long timeout = ConfigManager.getTimeOut();
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
@@ -906,11 +931,11 @@ public class WebDriverUtils implements WebDriverActions {
         }
 
         try {
-            WebDriverWait wait = new WebDriverWait(getDriver(), Duration.ofSeconds(10));
+            WebDriverWait wait = new WebDriverWait(getDriver(), Duration.ofSeconds(timeout));
             wait.until(ExpectedConditions.invisibilityOf(element));
         } catch (Exception e) {
-            ExtentManager.logStep("Element did not appear after 10 seconds", "fail", false);
-            Assert.fail("Element did not appear after 10 seconds");
+            ExtentManager.logStep("Element did not appear after " + timeout + " seconds", "fail", false);
+            Assert.fail("Element did not appear after " + timeout + " seconds");
         }
 
     }
