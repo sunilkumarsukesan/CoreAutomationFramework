@@ -236,12 +236,23 @@ public interface WebDriverActions {
     boolean verifySelected(WebElement ele);
 
     /**
-     * Locates an element using the specified locator type and value.
-     * @param locatorType The type of locator (e.g., ID, XPATH, CLASS_NAME).
-     * @param value The locator value.
-     * @return The located WebElement.
+     * Locates an element using the specified Selenium {@code By} locator.
+     * Waits until the element is visible before returning it.
+     *
+     * @param locator The Selenium {@code By} locator.
+     * @return The located {@code WebElement}.
      */
-    WebElement locateElement(Locators locatorType, String value);
+    WebElement locateElement(By locator);
+
+    /**
+     * Converts a {@code Locators} type and value into a Selenium {@code By} locator.
+     *
+     * @param locatorType The type of locator (e.g., ID, XPATH, CSS).
+     * @param value The locator value.
+     * @return The generated {@code By} locator.
+     */
+    By getBy(Locators locatorType, String value);
+
 
     /**
      * Locates an element using its ID.
