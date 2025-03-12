@@ -42,4 +42,12 @@ public class ConfigManager {
     public static String getBrowser() {
         return testSuiteProperties.getProperty("browser", coreProperties.getProperty("browser", "chrome")); // Default is Chrome
     }
+
+    public static String getApplicationName() {
+        return testSuiteProperties.getProperty("ApplicationName", coreProperties.getProperty("ApplicationName", "Salesforce")); // Default is Chrome
+    }
+
+    public static String getTestDataPath() {
+        return testSuiteProperties.getProperty("testDataPath", coreProperties.getProperty("testDataPath", "src/test/resources/testData/")); // Default is Chrome
+    }
 }
