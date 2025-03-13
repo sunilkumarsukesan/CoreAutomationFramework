@@ -4,7 +4,6 @@ import com.automation.core.config.ConfigManager;
 import com.automation.core.drivers.DriverManager;
 import com.automation.core.listeners.TestListener;
 import com.automation.core.reporting.ExtentManager;
-import com.automation.core.utils.ExecutionUtils;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;

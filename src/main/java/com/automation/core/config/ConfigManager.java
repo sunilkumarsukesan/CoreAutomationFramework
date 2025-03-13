@@ -1,16 +1,15 @@
 package com.automation.core.config;
 
+import com.automation.core.utils.PasswordManagerUtil;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
-import static com.automation.core.utils.PasswordManagerUtil.decrypt;
-
 public class ConfigManager {
     private static Properties coreProperties = new Properties();
     private static Properties testSuiteProperties = new Properties();
-    private static String key = "MySecretKey12345";
 
     static {
         loadCoreProperties();
@@ -52,7 +51,7 @@ public class ConfigManager {
 
     public static String getApplicationPassword(String appName) throws Exception {
         String env = getEnvironment();
-        return decrypt(testSuiteProperties.getProperty(env + "." + appName + ".password", coreProperties.getProperty(env + "." + appName + ".password")).trim(), key);
+        return new PasswordManagerUtil().decrypt(testSuiteProperties.getProperty(env + "." + appName + ".password", coreProperties.getProperty(env + "." + appName + ".password")).trim());
     }
 
     public static String getBrowser() {

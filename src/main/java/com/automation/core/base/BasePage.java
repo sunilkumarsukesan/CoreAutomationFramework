@@ -1,15 +1,13 @@
-package com.automation.core.pages;
+package com.automation.core.base;
 
 import com.automation.core.design.Locators;
 import com.automation.core.drivers.DriverManager;
-import com.automation.core.listeners.TestListener;
 import com.automation.core.reporting.ExtentManager;
 import com.automation.core.web.WebDriverActions;
 import com.automation.core.web.WebDriverUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.RemoteWebDriver;
-import org.testng.annotations.Listeners;
 
 import java.util.List;
 
