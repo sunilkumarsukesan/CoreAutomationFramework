@@ -22,21 +22,24 @@ public class TestListener implements ITestListener {
 
     @Override
     public void onTestStart(ITestResult result) {
-        // Extract category from TestNG groups (if any)
-        String[] groups = result.getMethod().getGroups();
-        String category = (groups.length > 0) ? groups[0] : "DefaultCategory"; // Use first group or default
-        ExtentTest test = ExtentManager.createTest(
-                result.getMethod().getMethodName(),
-                result.getMethod().getDescription(),
-                category
-        );
-        ExtentManager.setTestThread(test); // Ensuring the test is stored
+        if ((!result.getMethod().toString().equalsIgnoreCase("runScenario"))
+        && (!result.getMethod().getDescription().toString().equalsIgnoreCase("Runs Cucumber Scenarios")))
+        {
+            // Extract category from TestNG groups (if any)
+            String[] groups = result.getMethod().getGroups();
+            String category = (groups.length > 0) ? groups[0] : "DefaultCategory"; // Use first group or default
+            ExtentTest test = ExtentManager.createTest(
+                    result.getMethod().getMethodName(),
+                    result.getMethod().getDescription(),
+                    category
+            );
+            ExtentManager.setTestThread(test); // Ensuring the test is stored
+        }
     }
 
 
     @Override
     public void onTestSuccess(ITestResult result) {
-        ExtentManager.getCurrentTest().log(Status.PASS, "Test Passed ✅");
         System.out.println("Test Passed: " + result.getMethod().getMethodName());
     }
 
@@ -54,12 +57,12 @@ public class TestListener implements ITestListener {
             }
         }
 
-        System.out.println("Test Failed ❌: " + result.getMethod().getMethodName());
+        System.out.println("Test Failed : " + result.getMethod().getMethodName());
     }
 
     @Override
     public void onTestSkipped(ITestResult result) {
-        ExtentManager.getCurrentTest().log(Status.SKIP, "Test Skipped ⚠️");
+        ExtentManager.getCurrentTest().log(Status.SKIP, "Test Skipped ️");
         System.out.println("Test Skipped: " + result.getMethod().getMethodName());
     }
 
