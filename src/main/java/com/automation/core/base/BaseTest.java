@@ -3,14 +3,17 @@ package com.automation.core.base;
 import com.automation.core.config.ConfigManager;
 import com.automation.core.drivers.DriverManager;
 import com.automation.core.listeners.TestListener;
+import com.automation.core.logger.LoggerManager;
 import com.automation.core.reporting.ExtentManager;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.slf4j.Logger;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Listeners;
 
 @Listeners(TestListener.class)
 public class BaseTest {
+    private static final Logger logger = LoggerManager.getLogger(BaseTest.class);
     public RemoteWebDriver driver;
 
     @BeforeMethod
@@ -24,7 +27,7 @@ public class BaseTest {
         DriverManager.initDriver(browser);  // Initialize Driver
         driver = DriverManager.getDriver(); // Assign instance to class variable
         driver.manage().window().maximize();
-        System.out.println("Navigating to: " + baseUrl);
+        logger.info("Navigating to: " + baseUrl);
         driver.get(baseUrl);
     }
 

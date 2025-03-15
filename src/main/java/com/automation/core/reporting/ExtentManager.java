@@ -1,7 +1,10 @@
 package com.automation.core.reporting;
 
+import com.automation.core.base.BaseTest;
 import com.automation.core.drivers.DriverManager;
 import com.automation.core.hooks.Hooks;
+import com.automation.core.hooks.ScenarioContext;
+import com.automation.core.logger.LoggerManager;
 import com.aventstack.extentreports.ExtentReports;
 import com.aventstack.extentreports.ExtentTest;
 import com.aventstack.extentreports.MediaEntityBuilder;
@@ -18,14 +21,13 @@ import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
 public class ExtentManager {
     private static ExtentReports extent;
-    private static final Logger logger = Logger.getLogger(ExtentManager.class.getName());
     private static final ThreadLocal<ExtentTest> testThread = new ThreadLocal<>();
     private static final ConcurrentHashMap<Long, String> categoryMap = new ConcurrentHashMap<>();
     public static String reportFolder = "";
+    private static final org.slf4j.Logger logger = LoggerManager.getLogger(ExtentManager.class);
 
     /**
      * Initializes the Extent Reports instance
@@ -37,9 +39,9 @@ public class ExtentManager {
             if (!reportsDirectory.exists()) {
                 boolean isCreated = reportsDirectory.mkdirs();
                 if (isCreated) {
-                    System.out.println("Created 'reports/' directory.");
+                    logger.info("Created 'reports/' directory.");
                 } else {
-                    System.err.println("Failed to create 'reports/' directory.");
+                    logger.error("Failed to create 'reports/' directory.");
                 }
             }
 
@@ -93,23 +95,15 @@ public class ExtentManager {
     }
 
     /**
-     * Retrieves category based on current thread
-     */
-    private static String getCategoryForCurrentThread() {
-        long threadId = Thread.currentThread().getId();
-        return categoryMap.getOrDefault(threadId, "Uncategorized");
-    }
-
-    /**
      * Assigns author to the test.
      */
     public static void assignAuthor(String author) {
         ExtentTest test = getCurrentTest();
         if (test != null) {
             test.assignAuthor(author);
-            System.out.println("Assigned author: " + author);
+            logger.info("Assigned author: " + author);
         } else {
-            logger.warning("Failed to assign author: No active test found.");
+            logger.error("Failed to assign author: No active test found.");
         }
     }
 
@@ -120,7 +114,7 @@ public class ExtentManager {
         ExtentTest test = getCurrentTest();
 
         if (test == null) {
-            logger.warning("logStep(): No active test found! Skipping log: " + stepDescription);
+            logger.error("logStep(): No active test found! Skipping log: " + stepDescription);
             return;
         }
 
@@ -143,7 +137,7 @@ public class ExtentManager {
     }
 
     public static void logStep(String stepDescription, String statusAsString, boolean attachScreenshot) {
-        logStep(stepDescription, statusAsString, true, DriverManager.getDriver());
+        logStep(stepDescription, statusAsString, attachScreenshot, DriverManager.getDriver());
     }
 
         /**
@@ -151,21 +145,23 @@ public class ExtentManager {
          */
         public static String takeScreenshot(WebDriver driver) {
             if (driver == null) {
-                logger.warning("WebDriver instance is null. Screenshot not taken.");
+                logger.error("WebDriver instance is null. Screenshot not taken.");
                 return null;
             }
 
             try {
                 File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
 
-                // Retrieve the stored category
-                String category = getCategoryForCurrentThread();
-                if (category == null || category.isEmpty()) {
-                    category = "Uncategorized";
+                // Retrieve the stored scenario tag
+                String currentScenarioTag = ScenarioContext.getScenarioTagForCurrentThread();
+
+                // If the scenario tag is not found, default to "Uncategorized"
+                if (currentScenarioTag == null || currentScenarioTag.isEmpty()) {
+                    currentScenarioTag = "Uncategorized";
                 }
 
                 // Define screenshot folder inside report folder
-                String screenshotFolder = reportFolder + "/screenshots/" + category;
+                String screenshotFolder = reportFolder + "/screenshots/" + currentScenarioTag;
                 File screenshotDir = new File(screenshotFolder);
                 if (!screenshotDir.exists()) {
                     screenshotDir.mkdirs();
@@ -179,9 +175,9 @@ public class ExtentManager {
                 File destFile = new File(screenshotPath);
                 Files.copy(srcFile.toPath(), destFile.toPath());
 
-                return "screenshots/" + category + "/" + screenshotName; // Returning relative path
+                return "screenshots/" + currentScenarioTag + "/" + screenshotName; // Returning relative path
             } catch (IOException e) {
-                logger.warning("Failed to capture screenshot: " + e.getMessage());
+                logger.error("Failed to capture screenshot: " + e.getMessage());
                 return null;
             }
         }
@@ -192,7 +188,7 @@ public class ExtentManager {
     public static void flushReports() {
         if (extent != null) {
             extent.flush();
-            System.out.println("Flushed Extent Reports.");
+            logger.info("Flushed Extent Reports.");
         }
     }
 }

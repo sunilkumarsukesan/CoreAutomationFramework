@@ -1,5 +1,9 @@
 package com.automation.core.utils;
 
+import com.automation.core.logger.LoggerManager;
+import com.automation.core.testData.TestDataManager;
+import org.slf4j.Logger;
+
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -10,6 +14,7 @@ import java.util.Base64;
 
 public class PasswordManagerUtil implements PasswordManager {
 
+    private static final Logger logger = LoggerManager.getLogger(PasswordManagerUtil.class);
     private static final String AES_ALGORITHM = "AES";
     private static final String KEYSTORE_FILE = "./certs/keystore/mykeystore.p12"; // Keystore file
     private static final String KEYSTORE_PASSWORD = "changeit";   // Keystore password
@@ -91,7 +96,7 @@ public class PasswordManagerUtil implements PasswordManager {
                 keystore.store(fos, KEYSTORE_PASSWORD.toCharArray());
             }
 
-            System.out.println("Keystore successfully created with alias: " + SECRET_KEY_ALIAS);
+            logger.info("Keystore successfully created with alias: " + SECRET_KEY_ALIAS);
         } catch (Exception e) {
             e.printStackTrace();
         }

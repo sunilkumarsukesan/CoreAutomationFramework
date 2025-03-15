@@ -57,14 +57,6 @@ public class BasePage extends ExtentManager {
         actions.click(ele);
     }
 
-    protected void clickUsingJs(By locator) {
-        actions.clickUsingJs(locator);
-    }
-
-    protected void click(By locator) {
-        actions.click(locator);
-    }
-
     protected void clickWithNoSnap(WebElement ele) {
         actions.clickWithNoSnap(ele);
     }
@@ -153,12 +145,8 @@ public class BasePage extends ExtentManager {
         return actions.verifySelected(ele);
     }
 
-    protected WebElement locateElement(By locator) {
-        return actions.locateElement(locator);
-    }
-
-    protected By getBy(Locators locatorType, String value) {
-        return actions.getBy(locatorType, value);
+    protected WebElement locateElement(Locators locatorType, String value) {
+        return actions.locateElement(locatorType, value);
     }
 
     protected WebElement locateElement(String value) {

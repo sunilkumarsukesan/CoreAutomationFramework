@@ -1,22 +1,26 @@
 package com.automation.core.listeners;
 
+import com.automation.core.hooks.Hooks;
+import com.automation.core.logger.LoggerManager;
 import com.automation.core.reporting.ExtentManager;
 import com.aventstack.extentreports.ExtentTest;
 import com.aventstack.extentreports.Status;
+import org.slf4j.Logger;
 import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
 
 public class TestListener implements ITestListener {
+    private static final Logger logger = LoggerManager.getLogger(TestListener.class);
 
     @Override
     public void onStart(ITestContext context) {
-        System.out.println("Test Suite Started: " + context.getName());
+        logger.info("Test Suite Started: " + context.getName());
     }
 
     @Override
     public void onFinish(ITestContext context) {
-        System.out.println("Test Suite Finished: " + context.getName());
+        logger.info("Test Suite Finished: " + context.getName());
         ExtentManager.flushReports();
     }
 
@@ -40,7 +44,7 @@ public class TestListener implements ITestListener {
 
     @Override
     public void onTestSuccess(ITestResult result) {
-        System.out.println("Test Passed: " + result.getMethod().getMethodName());
+        logger.info("Test Passed: " + result.getMethod().getMethodName());
     }
 
     @Override
@@ -53,29 +57,29 @@ public class TestListener implements ITestListener {
             try {
                 ExtentManager.getCurrentTest().addScreenCaptureFromPath(screenshotPath);
             } catch (Exception e) {
-                System.out.println("Failed to attach screenshot: " + e.getMessage());
+                logger.info("Failed to attach screenshot: " + e.getMessage());
             }
         }
 
-        System.out.println("Test Failed : " + result.getMethod().getMethodName());
+        logger.info("Test Failed : " + result.getMethod().getMethodName());
     }
 
     @Override
     public void onTestSkipped(ITestResult result) {
         ExtentManager.getCurrentTest().log(Status.SKIP, "Test Skipped ️");
-        System.out.println("Test Skipped: " + result.getMethod().getMethodName());
+        logger.info("Test Skipped: " + result.getMethod().getMethodName());
     }
 
     @Override
     public void onTestFailedButWithinSuccessPercentage(ITestResult result) {
-        System.out.println("Test Partially Failed: " + result.getMethod().getMethodName());
+        logger.info("Test Partially Failed: " + result.getMethod().getMethodName());
     }
 
     private String takeScreenshot(String methodName) {
         try {
             return null; // Implement screenshot capture logic if needed
         } catch (Exception e) {
-            System.out.println("Failed to capture screenshot: " + e.getMessage());
+            logger.info("Failed to capture screenshot: " + e.getMessage());
             return null;
         }
     }

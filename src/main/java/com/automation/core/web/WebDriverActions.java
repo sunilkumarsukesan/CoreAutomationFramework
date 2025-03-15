@@ -66,21 +66,9 @@ public interface WebDriverActions {
 
     /**
      * Clicks on an element using JavaScript Executor.
-     * @param locator The Selenium {@code By} locator.
-     */
-    void clickUsingJs(By locator);
-
-    /**
-     * Clicks on an element using JavaScript Executor.
      * @param ele The WebElement.
      */
     void clickUsingJs(WebElement ele);
-
-    /**
-     * Clicks on an element located by a specific locator type.
-     * @param locator The Selenium {@code By} locator.
-     */
-    void click(By locator);
 
     /**
      * Clicks on an element without taking a snapshot.
@@ -244,20 +232,10 @@ public interface WebDriverActions {
      * Locates an element using the specified Selenium {@code By} locator.
      * Waits until the element is visible before returning it.
      *
-     * @param locator The Selenium {@code By} locator.
-     * @return The located {@code WebElement}.
-     */
-    WebElement locateElement(By locator);
-
-    /**
-     * Converts a {@code Locators} type and value into a Selenium {@code By} locator.
-     *
      * @param locatorType The type of locator (e.g., ID, XPATH, CSS).
      * @param value The locator value.
-     * @return The generated {@code By} locator.
      */
-    By getBy(Locators locatorType, String value);
-
+    WebElement locateElement(Locators locatorType, String value);
 
     /**
      * Locates an element using its ID.

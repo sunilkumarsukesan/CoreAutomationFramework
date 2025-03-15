@@ -1,6 +1,10 @@
 package com.automation.core.testData;
 
+import com.automation.core.listeners.TestListener;
+import com.automation.core.logger.LoggerManager;
 import org.apache.poi.ss.usermodel.*;
+import org.slf4j.Logger;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -10,6 +14,7 @@ public class TestDataManager {
     private static final Map<String, Map<String, Map<String, String>>> testDataMap = new HashMap<>();
     private static String currentTestDataFile;  // Store current test data file
     private static String currentRowId;         // Store current RowID
+    private static final Logger logger = LoggerManager.getLogger(TestDataManager.class);
 
     public static void loadTestData(String testDataSheet) throws IOException {
         if (testDataMap.containsKey(testDataSheet)) {
@@ -54,7 +59,7 @@ public class TestDataManager {
         testDataMap.put(testDataSheet, sheetData);
         workbook.close();
         fis.close();
-        System.out.println("Loaded test data for sheet: " + testDataSheet);
+        logger.info("Loaded test data for sheet: " + testDataSheet);
     }
 
     // Set the current test data context (called in Hooks or CommonSteps)

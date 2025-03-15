@@ -14,28 +14,30 @@ import java.util.Set;
 import com.automation.core.config.ConfigManager;
 import com.automation.core.design.Locators;
 import com.automation.core.drivers.DriverManager;
+import com.automation.core.logger.LoggerManager;
 import com.automation.core.reporting.ExtentManager;
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.slf4j.Logger;
 import org.testng.Assert;
 
 import static com.automation.core.drivers.DriverManager.getDriver;
 import static com.automation.core.drivers.DriverManager.getWait;
 
-public class WebDriverUtils implements WebDriverActions {
+public class WebDriverUtils extends ExtentManager implements WebDriverActions {
     public Actions act;
+    private static final Logger logger = LoggerManager.getLogger(WebDriverUtils.class);
 
     public String getAttribute(WebElement ele, String attributeValue) {
         String val = "";
         try {
             val = ele.getAttribute(attributeValue);
         } catch (WebDriverException e) {
-            ExtentManager.logStep("Attribue value not able to fetch :" + e.getMessage(), "info");
+            logStep("Attribue value not able to fetch :" + e.getMessage(), "info");
             Assert.fail("Attribue value not able to fetch :" + e.getMessage());
         }
         return val;
@@ -64,13 +66,13 @@ public class WebDriverUtils implements WebDriverActions {
     public void doubleTap(WebElement ele) {
         act = new Actions(getDriver());
         act.click(getWait().until(ExpectedConditions.elementToBeClickable(ele))).click().perform();
-        ExtentManager.logStep("Element moved", "info");
+        logStep("Element moved", "info");
     }
 
     public void doubleClick(WebElement ele) {
         act = new Actions(getDriver());
         act.doubleClick(getWait().until(ExpectedConditions.elementToBeClickable(ele))).perform();
-        ExtentManager.logStep("Element double clicked", "info");
+        logStep("Element double clicked", "info");
     }
 
 
@@ -80,43 +82,9 @@ public class WebDriverUtils implements WebDriverActions {
             WebDriverWait wait = new WebDriverWait(getDriver(), Duration.ofSeconds(timeout));
             wait.until(ExpectedConditions.visibilityOf(element));
         } catch (Exception e) {
-            ExtentManager.logStep("Element did not appear after " + timeout + " seconds", "fail", false);
+            logStep("Element did not appear after " + timeout + " seconds", "fail", false);
             Assert.fail("Element did not appear after " + timeout + " seconds");
         }
-    }
-
-    public void clickUsingJs(By locator) {
-        String text = "";
-        int attempts = 3; // Retry attempts for handling StaleElementReferenceException
-        WebElement ele = locateElement(locator);
-        for (int i = 0; i < attempts; i++) {
-            try {
-                getWait().until(ExpectedConditions.elementToBeClickable(ele));
-                getWait().until(ExpectedConditions.visibilityOf(ele));
-                DriverManager.fluentWait(driver -> {
-                    if (ele.isDisplayed() && ele.isEnabled()) {
-                        return ele;
-                    }
-                    return null;
-                });
-                text = ele.getText();
-                getDriver().executeScript("arguments[0].click()", ele);
-                return; // Exit loop if click is successful
-            } catch (StaleElementReferenceException e) {
-                ExtentManager.logStep("Retrying JS click due to StaleElementReferenceException: Attempt " + (i + 1), "warning");
-                getDriver().navigate().refresh();
-            } catch (WebDriverException e) {
-                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
-                Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
-            } catch (Exception e) {
-                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
-                Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
-            }
-        }
-
-        // If all retries fail, log failure
-        ExtentManager.logStep("Failed to click element using JS after multiple attempts: " + text, "fail");
-        Assert.fail("Failed to click element using JS after multiple attempts: " + text);
     }
 
     public void clickUsingJs(WebElement ele) {
@@ -134,19 +102,19 @@ public class WebDriverUtils implements WebDriverActions {
                 getDriver().executeScript("arguments[0].click()", ele);
                 return; // Exit loop if click is successful
             } catch (StaleElementReferenceException e) {
-                ExtentManager.logStep("Retrying JS click due to StaleElementReferenceException: Attempt " + (i + 1), "warning");
+                logStep("Retrying JS click due to StaleElementReferenceException: Attempt " + (i + 1), "info");
                 getDriver().navigate().refresh();
             } catch (WebDriverException e) {
-                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
+                logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
                 Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
             } catch (Exception e) {
-                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
+                logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
                 Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
             }
         }
 
         // If all retries fail, log failure
-        ExtentManager.logStep("Failed to click element using JS after multiple attempts: " + text, "fail");
+        logStep("Failed to click element using JS after multiple attempts: " + text, "fail");
         Assert.fail("Failed to click element using JS after multiple attempts: " + text);
     }
 
@@ -177,68 +145,27 @@ public class WebDriverUtils implements WebDriverActions {
                 return; // Exit loop if click is successful
             } catch (StaleElementReferenceException e) {
                 // Re-locate element and retry
-                ExtentManager.logStep("Retrying click due to StaleElementReferenceException: Attempt " + (i + 1), "warning");
+                logStep("Retrying click due to StaleElementReferenceException: Attempt " + (i + 1), "info");
                 String locatorDetails = ele.toString();  // Example: "By.xpath: //span[text()='App Launcher']"
                 Locators locatorType = Locators.valueOf(locatorDetails.split(": ")[0].replace("By.", ""));  // Extracts 'xpath', 'id', etc.
                 String value = locatorDetails.split(": ", 2)[1];  // Extracts actual value
-                ele = locateElement(getBy(locatorType, value)); // Re-locate element before retry
+                ele = locateElement(locatorType, value); // Re-locate element before retry
             } catch (ElementClickInterceptedException e) {
                 clickUsingJs(ele);
                 return;
             } catch (WebDriverException e) {
-                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
+                logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
                 Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
             } catch (Exception e) {
-                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
+                logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
                 Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
             }
         }
 
         // If all retries fail, log failure
-        ExtentManager.logStep("Failed to click element after multiple attempts: " + text, "fail");
+        logStep("Failed to click element after multiple attempts: " + text, "fail");
         Assert.fail("Failed to click element after multiple attempts: " + text);
     }
-
-    public void click(By locator) {
-        String text = "";
-        WebElement ele = locateElement(locator);
-
-        int attempts = 3; // Retry attempts for handling StaleElementReferenceException
-
-        for (int i = 0; i < attempts; i++) {
-            try {
-                // Wait for element to be clickable and visible
-                getWait().until(ExpectedConditions.elementToBeClickable(ele));
-                getWait().until(ExpectedConditions.visibilityOf(ele));
-
-                text = ele.getText();
-
-                if (ele.isEnabled()) {
-                    ele.click();
-                } else {
-                    clickUsingJs(locateElement(locator));
-                }
-                return; // Click successful, exit loop
-            } catch (StaleElementReferenceException e) {
-                ExtentManager.logStep("Retrying click due to StaleElementReferenceException: Attempt " + (i + 1), "warning");
-                ele = locateElement(locator); // Re-locate element before retry
-            } catch (ElementClickInterceptedException e) {
-                clickUsingJs(locateElement(locator));
-                return;
-            } catch (WebDriverException e) {
-                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
-                Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
-            } catch (Exception e) {
-                ExtentManager.logStep("The Element " + text + " could not be clicked due to: " + e.getMessage(), "fail");
-                Assert.fail("The Element " + text + " could not be clicked due to: " + e.getMessage());
-            }
-        }
-
-        // If all retries fail, log failure
-        ExtentManager.logStep("Failed to click element after multiple attempts: " + text, "fail");
-        Assert.fail("Failed to click element after multiple attempts: " + text);
-    }
-
 
     public void clickWithNoSnap(WebElement ele) {
         String text = ele.getText();
@@ -246,13 +173,13 @@ public class WebDriverUtils implements WebDriverActions {
             getWait().until(ExpectedConditions.elementToBeClickable(ele));
             ele.click();
         } catch (StaleElementReferenceException e) {
-            ExtentManager.logStep("The Element " + ele + " could not be clicked \n" + e.getMessage(), "fail", false);
+            logStep("The Element " + ele + " could not be clicked \n" + e.getMessage(), "fail", false);
             Assert.fail("The Element " + text + " could not be clicked due to:" + e.getMessage());
         } catch (WebDriverException e) {
-            ExtentManager.logStep("The Element " + ele + " could not be clicked \n" + e.getMessage(), "fail", false);
+            logStep("The Element " + ele + " could not be clicked \n" + e.getMessage(), "fail", false);
             Assert.fail("The Element " + text + " could not be clicked due to:" + e.getMessage());
         } catch (Exception e) {
-            ExtentManager.logStep("The Element " + ele + " could not be clicked \n" + e.getMessage(), "fail", false);
+            logStep("The Element " + ele + " could not be clicked \n" + e.getMessage(), "fail", false);
             Assert.fail("The Element " + text + " could not be clicked due to:" + e.getMessage());
         }
     }
@@ -267,7 +194,7 @@ public class WebDriverUtils implements WebDriverActions {
                 ele.sendKeys(data);
             }
         } catch (WebDriverException e) {
-            ExtentManager.logStep("The Element " + ele + " could not be appended \n" + e.getMessage(), "fail");
+            logStep("The Element " + ele + " could not be appended \n" + e.getMessage(), "fail");
             Assert.fail("The Element " + ele + " could not be appended \n" + e.getMessage());
         }
     }
@@ -277,32 +204,25 @@ public class WebDriverUtils implements WebDriverActions {
         try {
             ele.clear();
         } catch (ElementNotInteractableException e) {
-            ExtentManager.logStep("The field is not Interactable \n" + e.getMessage(), "fail");
+            logStep("The field is not Interactable \n" + e.getMessage(), "fail");
             Assert.fail("The field is not Interactable \n" + e.getMessage());
         }
     }
 
-    /**
-     * Overloaded method used to clear the existing value and type the data with
-     * keys for tab or enter kind of
-     *
-     * @param ele  - WebElement from the DOM
-     * @param data - Use to type and pass Keys as many needed
-     */
     public void clearAndType(WebElement ele, CharSequence... data) {
         try {
             getWait().until(ExpectedConditions.visibilityOf(ele));
             ele.clear();
             ele.sendKeys(data);
         } catch (ElementNotInteractableException e) {
-            ExtentManager.logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
+            logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
             Assert.fail("The Element " + ele + " is not Interactable \n" + e.getMessage());
         } catch (WebDriverException e) { // retry - 1
             pause(500);
             try {
                 ele.sendKeys(data);
             } catch (Exception e1) {
-                ExtentManager.logStep("The Element " + ele + " did not allow to clear / type \n" + e.getMessage(), "fail");
+                logStep("The Element " + ele + " did not allow to clear / type \n" + e.getMessage(), "fail");
                 Assert.fail("The Element " + ele + " did not allow to clear / type \n" + e.getMessage());
             }
         }
@@ -316,14 +236,14 @@ public class WebDriverUtils implements WebDriverActions {
             ele.clear();
             ele.sendKeys("", "", data);
         } catch (ElementNotInteractableException e) {
-            ExtentManager.logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
+            logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
             Assert.fail("The Element " + ele + " is not Interactable \n" + e.getMessage());
         } catch (WebDriverException e) { // retry - 1
             pause(500);
             try {
                 ele.sendKeys(data);
             } catch (Exception e1) {
-                ExtentManager.logStep("The Element " + ele + " did not allow to clear / type \n" + e.getMessage(), "fail");
+                logStep("The Element " + ele + " did not allow to clear / type \n" + e.getMessage(), "fail");
                 Assert.fail("The Element " + ele + " did not allow to clear / type \n" + e.getMessage());
             }
         }
@@ -336,10 +256,10 @@ public class WebDriverUtils implements WebDriverActions {
             ele.clear();
             ele.sendKeys("", "", data, Keys.TAB);
         } catch (ElementNotInteractableException e) {
-            ExtentManager.logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
+            logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
             Assert.fail("The Element " + ele + " is not Interactable \n" + e.getMessage());
         } catch (WebDriverException e) {
-            ExtentManager.logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
+            logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
             Assert.fail("The Element " + ele + " is not Interactable \n" + e.getMessage());
         }
 
@@ -351,10 +271,10 @@ public class WebDriverUtils implements WebDriverActions {
             ele.clear();
             ele.sendKeys("", "", data);
         } catch (ElementNotInteractableException e) {
-            ExtentManager.logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
+            logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
             Assert.fail("The Element " + ele + " is not Interactable \n" + e.getMessage());
         } catch (WebDriverException e) {
-            ExtentManager.logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
+            logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
             Assert.fail("The Element " + ele + " is not Interactable \n" + e.getMessage());
         }
 
@@ -366,10 +286,10 @@ public class WebDriverUtils implements WebDriverActions {
             ele.clear();
             ele.sendKeys("", "", data, Keys.ENTER);
         } catch (ElementNotInteractableException e) {
-            ExtentManager.logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
+            logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
             Assert.fail("The Element " + ele + " is not Interactable \n" + e.getMessage());
         } catch (WebDriverException e) {
-            ExtentManager.logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
+            logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
             Assert.fail("The Element " + ele + " is not Interactable \n" + e.getMessage());
 
         }
@@ -380,13 +300,13 @@ public class WebDriverUtils implements WebDriverActions {
     public String getElementText(WebElement ele) {
         try {
             String text = ele.getText();
-            ExtentManager.logStep("Text has been retrieved " + text, "info");
+            logStep("Text has been retrieved " + text, "info");
             return text;
         } catch (WebDriverException e) {
-            ExtentManager.logStep("Sorry! text is not available \n" + e.getMessage(), "fail");
+            logStep("Sorry! text is not available \n" + e.getMessage(), "fail");
             Assert.fail("Sorry! text is not available \n" + e.getMessage());
         } catch (Exception e) {
-            ExtentManager.logStep("Sorry! text is not available \n" + e.getMessage(), "fail");
+            logStep("Sorry! text is not available \n" + e.getMessage(), "fail");
             Assert.fail("Sorry! text is not available \n" + e.getMessage());
         }
         return null;
@@ -397,12 +317,12 @@ public class WebDriverUtils implements WebDriverActions {
         String cssValue = null;
         try {
             cssValue = ele.getCssValue("color");
-            ExtentManager.logStep("The background color is " + cssValue, "info");
+            logStep("The background color is " + cssValue, "info");
         } catch (WebDriverException e) {
-            ExtentManager.logStep("Not able to get the background color \n" + e.getMessage(), "fail");
+            logStep("Not able to get the background color \n" + e.getMessage(), "fail");
             Assert.fail("Not able to get the background color \n" + e.getMessage());
         } catch (Exception e) {
-            ExtentManager.logStep("Not able to get the background color \n" + e.getMessage(), "fail");
+            logStep("Not able to get the background color \n" + e.getMessage(), "fail");
             Assert.fail("Not able to get the background color \n" + e.getMessage());
 
         }
@@ -414,9 +334,9 @@ public class WebDriverUtils implements WebDriverActions {
         String attributeValue = null;
         try {
             attributeValue = ele.getAttribute("value");
-            ExtentManager.logStep("The attribute value is " + attributeValue, "info");
+            logStep("The attribute value is " + attributeValue, "info");
         } catch (WebDriverException e) {
-            ExtentManager.logStep("Not able to find attribute value \n" + e.getMessage(), "fail");
+            logStep("Not able to find attribute value \n" + e.getMessage(), "fail");
             Assert.fail("Not able to find attribute value \n" + e.getMessage());
         }
         return attributeValue;
@@ -428,7 +348,7 @@ public class WebDriverUtils implements WebDriverActions {
             Select sel = new Select(ele);
             sel.selectByVisibleText(value);
         } catch (WebDriverException e) {
-            ExtentManager.logStep("Not able to select the drop down with text \n" + value, "fail");
+            logStep("Not able to select the drop down with text \n" + value, "fail");
             Assert.fail("Not able to select the drop down with text \n" + value);
         }
     }
@@ -439,7 +359,7 @@ public class WebDriverUtils implements WebDriverActions {
             Select sel = new Select(ele);
             sel.selectByIndex(index);
         } catch (WebDriverException e) {
-            ExtentManager.logStep("Not able to select the drop down with index " + index + " \n" + e.getMessage(), "fail");
+            logStep("Not able to select the drop down with index " + index + " \n" + e.getMessage(), "fail");
             Assert.fail("Not able to select the drop down with index " + index + " \n" + e.getMessage());
         }
     }
@@ -450,7 +370,7 @@ public class WebDriverUtils implements WebDriverActions {
             Select sel = new Select(ele);
             sel.selectByValue(value);
         } catch (WebDriverException e) {
-            ExtentManager.logStep("Not able to select the drop down with value " + value + " \n" + e.getMessage(), "fail");
+            logStep("Not able to select the drop down with value " + value + " \n" + e.getMessage(), "fail");
             Assert.fail("Not able to select the drop down with value " + value + " \n" + e.getMessage());
         }
     }
@@ -462,12 +382,12 @@ public class WebDriverUtils implements WebDriverActions {
             if (text.contains(expectedText)) {
                 return true;
             } else {
-                ExtentManager.logStep("The expected text " + text + "doesn't equals to the  " + expectedText, "warning");
+                logStep("The expected text " + text + "doesn't equals to the  " + expectedText, "fail");
                 Assert.fail("The expected text " + text + "doesn't equals to the  " + expectedText);
 
             }
         } catch (WebDriverException e) {
-            ExtentManager.logStep("Unknown exception occured while verifying the Text \n" + e.getMessage(), "fail");
+            logStep("Unknown exception occured while verifying the Text \n" + e.getMessage(), "fail");
             Assert.fail("Unknown exception occured while verifying the Text \n" + e.getMessage());
 
         }
@@ -481,11 +401,11 @@ public class WebDriverUtils implements WebDriverActions {
             if (ele.getText().contains(expectedText)) {
                 return true;
             } else {
-                ExtentManager.logStep("The expected text doesn't contain the actual " + expectedText, "warning");
+                logStep("The expected text doesn't contain the actual " + expectedText, "warning");
                 Assert.fail("The expected text doesn't contain the actual " + expectedText);
             }
         } catch (WebDriverException e) {
-            ExtentManager.logStep("Unknown exception occured while verifying the Text \n" + e.getMessage(), "fail");
+            logStep("Unknown exception occured while verifying the Text \n" + e.getMessage(), "fail");
             Assert.fail("Unknown exception occured while verifying the Text \n" + e.getMessage());
         }
         return false;
@@ -497,11 +417,11 @@ public class WebDriverUtils implements WebDriverActions {
             if (ele.getAttribute(attribute).equals(value)) {
                 return true;
             } else {
-                ExtentManager.logStep("The expected attribute :" + attribute + " value does not contains the actual " + value,  "warning");
+                logStep("The expected attribute :" + attribute + " value does not contains the actual " + value,  "warning");
                 Assert.fail("The expected attribute :" + attribute + " value does not contains the actual " + value);
             }
         } catch (WebDriverException e) {
-            ExtentManager.logStep("Unknown exception occured while verifying the Attribute Text \n" + e.getMessage(), "fail");
+            logStep("Unknown exception occured while verifying the Attribute Text \n" + e.getMessage(), "fail");
             Assert.fail("Unknown exception occured while verifying the Attribute Text \n" + e.getMessage());
         }
         return false;
@@ -511,14 +431,14 @@ public class WebDriverUtils implements WebDriverActions {
     public void verifyPartialAttribute(WebElement ele, String attribute, String value) {
         try {
             if (ele.getAttribute(attribute).contains(value)) {
-                ExtentManager.logStep("The expected attribute :" + attribute + " value contains the actual " + value, "pass");
+                logStep("The expected attribute :" + attribute + " value contains the actual " + value, "pass");
             } else {
-                ExtentManager.logStep("The expected attribute :" + attribute + " value does not contains the actual " + value,
+                logStep("The expected attribute :" + attribute + " value does not contains the actual " + value,
                         "warning");
                 Assert.fail("The expected attribute :" + attribute + " value does not contains the actual " + value);
             }
         } catch (WebDriverException e) {
-            ExtentManager.logStep("Unknown exception occured while verifying the Attribute Text \n" + e.getMessage(), "fail");
+            logStep("Unknown exception occured while verifying the Attribute Text \n" + e.getMessage(), "fail");
             Assert.fail("Unknown exception occured while verifying the Attribute Text \n" + e.getMessage());
         }
 
@@ -530,11 +450,11 @@ public class WebDriverUtils implements WebDriverActions {
             if (ele.isDisplayed()) {
                 return true;
             } else {
-                ExtentManager.logStep("The element " + ele + " is not visible", "warnings");
+                logStep("The element " + ele + " is not visible", "warnings");
                 Assert.fail("The element " + ele + " is not visible");
             }
         } catch (WebDriverException e) {
-            ExtentManager.logStep("WebDriverException : \n" + e.getMessage(), "fail");
+            logStep("WebDriverException : \n" + e.getMessage(), "fail");
             Assert.fail("WebDriverException : \n" + e.getMessage());
         }
         return false;
@@ -545,13 +465,13 @@ public class WebDriverUtils implements WebDriverActions {
     public boolean verifyDisappeared(WebElement ele) {
         try {
             Boolean until = getWait().until(ExpectedConditions.invisibilityOf(ele));
-            ExtentManager.logStep("Waited for an element to disappear", "info");
+            logStep("Waited for an element to disappear", "info");
             return until;
         } catch (org.openqa.selenium.TimeoutException e) {
-            ExtentManager.logStep("Element not disappeared \n" + e.getMessage(), "fail");
+            logStep("Element not disappeared \n" + e.getMessage(), "fail");
             Assert.fail("Element not disappeared \n" + e.getMessage());
         } catch (Exception e) {
-            ExtentManager.logStep("Element not disappeared \n" + e.getMessage(), "fail");
+            logStep("Element not disappeared \n" + e.getMessage(), "fail");
             Assert.fail("Element not disappeared \n" + e.getMessage());
         }
         return false;
@@ -564,11 +484,11 @@ public class WebDriverUtils implements WebDriverActions {
             if (ele.isEnabled()) {
                 return true;
             } else {
-                ExtentManager.logStep("The element " + ele + " is not Enabled", "warning");
+                logStep("The element " + ele + " is not Enabled", "warning");
                 Assert.fail("The element " + ele + " is not enabled");
             }
         } catch (WebDriverException e) {
-            ExtentManager.logStep("WebDriverException : \n" + e.getMessage(), "fail");
+            logStep("WebDriverException : \n" + e.getMessage(), "fail");
             Assert.fail("WebDriverException : \n" + e.getMessage());
         }
         return false;
@@ -580,11 +500,11 @@ public class WebDriverUtils implements WebDriverActions {
             if (ele.isSelected()) {
                 return true;
             } else {
-                ExtentManager.logStep("The element " + ele + " is not selected", "warning");
+                logStep("The element " + ele + " is not selected", "warning");
                 Assert.fail("The element " + ele + " is not selected");
             }
         } catch (WebDriverException e) {
-            ExtentManager.logStep("WebDriverException : \n" + e.getMessage(), "fail");
+            logStep("WebDriverException : \n" + e.getMessage(), "fail");
             Assert.fail("WebDriverException : \n" + e.getMessage());
         }
         return false;
@@ -592,43 +512,34 @@ public class WebDriverUtils implements WebDriverActions {
     }
 
     @Override
-    public WebElement locateElement(By locator) {
-        String locatorDetails = locator.toString();  // Example: "By.xpath: //span[text()='App Launcher']"
-        String locatorType = locatorDetails.split(": ")[0].replace("By.", "");  // Extracts 'xpath', 'id', etc.
-        String value = locatorDetails.split(": ", 2)[1];  // Extracts actual value
+    public WebElement locateElement(Locators type, String value) {
         try {
-            // Wait until element is visible
-            getWait().until(ExpectedConditions.visibilityOfElementLocated(locator));
-
-            // Locate the element and return it
-            return getDriver().findElement(locator);
+            switch (type) {
+                case CLASS_NAME:
+                    return getDriver().findElement(By.className(value));
+                case CSS:
+                    return getDriver().findElement(By.cssSelector(value));
+                case ID:
+                    return getDriver().findElement(By.id(value));
+                case LINK_TEXT:
+                    return getDriver().findElement(By.linkText(value));
+                case NAME:
+                    return getDriver().findElement(By.name(value));
+                case PARTIAL_LINKTEXT:
+                    return getDriver().findElement(By.partialLinkText(value));
+                case TAGNAME:
+                    return getDriver().findElement(By.tagName(value));
+                case XPATH:
+                    return getDriver().findElement(By.xpath(value));
+                default:
+                    System.err.println("Locator is not Valid");
+                    break;
+            }
         } catch (NoSuchElementException e) {
-            ExtentManager.logStep("The Element with locator:" + locatorType + " Not Found with value: " + value + "\n"
-                    + e.getMessage(), "fail");
-            Assert.fail("The Element with locator:" + locatorType + " Not Found with value: " + value + "\n"
-                    + e.getMessage());
-        } catch (Exception e) {
-            ExtentManager.logStep("The Element with locator:" + locatorType + " Not Found with value: " + value + "\n"
-                    + e.getMessage(), "fail");
-            Assert.fail("The Element with locator:" + locatorType + " Not Found with value: " + value + "\n"
-                    + e.getMessage());
+            logStep("The Element with locator:" + type + " Not Found with value: " + value + "\n" + e.getMessage(),
+                    "fail");
         }
         return null;
-    }
-
-    // Helper Method: Convert Locators Enum to By Type
-    public By getBy(Locators locatorType, String value) {
-        switch (locatorType) {
-            case CLASS_NAME: return By.className(value);
-            case CSS: return By.cssSelector(value);
-            case ID: return By.id(value);
-            case LINK_TEXT: return By.linkText(value);
-            case NAME: return By.name(value);
-            case PARTIAL_LINKTEXT: return By.partialLinkText(value);
-            case TAGNAME: return By.tagName(value);
-            case XPATH: return By.xpath(value);
-            default: throw new IllegalArgumentException("Invalid Locator Type: " + locatorType);
-        }
     }
 
     @Override
@@ -637,10 +548,10 @@ public class WebDriverUtils implements WebDriverActions {
             WebElement findElementById = getDriver().findElement(By.id(value));
             return findElementById;
         } catch (NoSuchElementException e) {
-            ExtentManager.logStep("The Element with locator id Not Found with value: " + value + "\n" + e.getMessage(), "fail");
+            logStep("The Element with locator id Not Found with value: " + value + "\n" + e.getMessage(), "fail");
             Assert.fail("The Element with locator id Not Found with value: " + value + "\n" + e.getMessage());
         } catch (Exception e) {
-            ExtentManager.logStep("The Element with locator id Not Found with value: " + value + "\n" + e.getMessage(), "fail");
+            logStep("The Element with locator id Not Found with value: " + value + "\n" + e.getMessage(), "fail");
             Assert.fail("The Element with locator id Not Found with value: " + value + "\n" + e.getMessage());
         }
         return null;
@@ -667,11 +578,11 @@ public class WebDriverUtils implements WebDriverActions {
                 case XPATH:
                     return getDriver().findElements(By.xpath(value));
                 default:
-                    System.err.println("Locator is not Valid");
+                    logger.info("Locator is not Valid");
                     break;
             }
         } catch (NoSuchElementException e) {
-            ExtentManager.logStep("The Element with locator:" + type + " Not Found with value: " + value + "\n" + e.getMessage(),
+            logStep("The Element with locator:" + type + " Not Found with value: " + value + "\n" + e.getMessage(),
                     "fail");
             Assert.fail("The Element with locator:" + type + " Not Found with value: " + value + "\n" + e.getMessage());
         }
@@ -682,12 +593,12 @@ public class WebDriverUtils implements WebDriverActions {
     public void switchToAlert() {
         try {
             getDriver().switchTo().alert();
-            ExtentManager.logStep("Focus has been switched to Alert", "info", false);
+            logStep("Focus has been switched to Alert", "info", false);
         } catch (NoAlertPresentException e) {
-            ExtentManager.logStep("There is no alert present.", "fail", false);
+            logStep("There is no alert present.", "fail", false);
             Assert.fail("There is no alert present");
         } catch (WebDriverException e) {
-            ExtentManager.logStep("WebDriverException : " + e.getMessage(), "fail", false);
+            logStep("WebDriverException : " + e.getMessage(), "fail", false);
             Assert.fail("WebDriverException : \n" + e.getMessage());
         }
     }
@@ -700,12 +611,12 @@ public class WebDriverUtils implements WebDriverActions {
             Alert alert = getDriver().switchTo().alert();
             text = alert.getText();
             alert.accept();
-            ExtentManager.logStep("The alert " + text + " is accepted.", "pass", false);
+            logStep("The alert " + text + " is accepted.", "pass", false);
         } catch (NoAlertPresentException e) {
-            ExtentManager.logStep("There is no alert present.", "fail", false);
+            logStep("There is no alert present.", "fail", false);
             Assert.fail("There is no alert present");
         } catch (WebDriverException e) {
-            ExtentManager.logStep("WebDriverException : " + e.getMessage(), "fail", false);
+            logStep("WebDriverException : " + e.getMessage(), "fail", false);
             Assert.fail("WebDriverException : \n" + e.getMessage());
         }
 
@@ -718,12 +629,12 @@ public class WebDriverUtils implements WebDriverActions {
             Alert alert = getDriver().switchTo().alert();
             text = alert.getText();
             alert.dismiss();
-            ExtentManager.logStep("The alert " + text + " is accepted.", "pass", false);
+            logStep("The alert " + text + " is accepted.", "pass", false);
         } catch (NoAlertPresentException e) {
-            ExtentManager.logStep("There is no alert present.", "pass", false);
+            logStep("There is no alert present.", "pass", false);
             Assert.fail("There is no alert present");
         } catch (WebDriverException e) {
-            ExtentManager.logStep("WebDriverException : " + e.getMessage(), "fail", false);
+            logStep("WebDriverException : " + e.getMessage(), "fail", false);
             Assert.fail("WebDriverException : \n" + e.getMessage());
         }
 
@@ -735,12 +646,12 @@ public class WebDriverUtils implements WebDriverActions {
         try {
             Alert alert = getDriver().switchTo().alert();
             text = alert.getText();
-            ExtentManager.logStep("The alert text is " + text, "pass", false);
+            logStep("The alert text is " + text, "pass", false);
         } catch (NoAlertPresentException e) {
-            ExtentManager.logStep("There is no alert present.", "fail", false);
+            logStep("There is no alert present.", "fail", false);
             Assert.fail("There is no alert present");
         } catch (WebDriverException e) {
-            ExtentManager.logStep("WebDriverException : \n" + e.getMessage(), "fail", false);
+            logStep("WebDriverException : \n" + e.getMessage(), "fail", false);
             Assert.fail("WebDriverException : \n" + e.getMessage());
         }
         return text;
@@ -751,10 +662,10 @@ public class WebDriverUtils implements WebDriverActions {
         try {
             getDriver().switchTo().alert().sendKeys(data);
         } catch (NoAlertPresentException e) {
-            ExtentManager.logStep("There is no alert present.", "fail", false);
+            logStep("There is no alert present.", "fail", false);
             Assert.fail("There is no alert present");
         } catch (WebDriverException e) {
-            ExtentManager.logStep("WebDriverException : \n" + e.getMessage(), "fail", false);
+            logStep("WebDriverException : \n" + e.getMessage(), "fail", false);
             Assert.fail("WebDriverException : \n" + e.getMessage());
         }
     }
@@ -765,13 +676,13 @@ public class WebDriverUtils implements WebDriverActions {
             Set<String> allWindows = getDriver().getWindowHandles();
             List<String> allhandles = new ArrayList<String>(allWindows);
             getDriver().switchTo().window(allhandles.get(index));
-            ExtentManager.logStep("The Window With index: " + index + " switched successfully", "info", false);
-            ExtentManager.logStep(getDriver().getTitle(), "info");
+            logStep("The Window With index: " + index + " switched successfully", "info", false);
+            logStep(getDriver().getTitle(), "info");
         } catch (NoSuchWindowException e) {
-            ExtentManager.logStep("The Window With index: " + index + " not found\n" + e.getMessage(), "fail", false);
+            logStep("The Window With index: " + index + " not found\n" + e.getMessage(), "fail", false);
             Assert.fail("The Window With index: " + index + " not found\n" + e.getMessage());
         } catch (Exception e) {
-            ExtentManager.logStep("The Window With index: " + index + " not found\n" + e.getMessage(), "fail", false);
+            logStep("The Window With index: " + index + " not found\n" + e.getMessage(), "fail", false);
             Assert.fail("The Window With index: " + index + " not found\n" + e.getMessage());
         }
     }
@@ -786,10 +697,10 @@ public class WebDriverUtils implements WebDriverActions {
                     break;
                 }
             }
-            ExtentManager.logStep("The Window With Title: " + title + "is switched ", "info");
+            logStep("The Window With Title: " + title + "is switched ", "info");
             return true;
         } catch (NoSuchWindowException e) {
-            ExtentManager.logStep("The Window With Title: " + title + " not found", "fail", false);
+            logStep("The Window With Title: " + title + " not found", "fail", false);
             Assert.fail("The Window With Title: " + title + " not found");
         }
         return false;
@@ -801,10 +712,10 @@ public class WebDriverUtils implements WebDriverActions {
             Thread.sleep(100);
             getDriver().switchTo().frame(index);
         } catch (NoSuchFrameException e) {
-            ExtentManager.logStep("No such frame " + e.getMessage(), "warning", false);
+            logStep("No such frame " + e.getMessage(), "warning", false);
             Assert.fail("No such frame " + e.getMessage());
         } catch (Exception e) {
-            ExtentManager.logStep("No such frame " + e.getMessage(), "fail", false);
+            logStep("No such frame " + e.getMessage(), "fail", false);
             Assert.fail("No such frame " + e.getMessage());
         }
 
@@ -815,10 +726,10 @@ public class WebDriverUtils implements WebDriverActions {
         try {
             getDriver().switchTo().frame(ele);
         } catch (NoSuchFrameException e) {
-            ExtentManager.logStep("No such frame " + e.getMessage(), "fail", false);
+            logStep("No such frame " + e.getMessage(), "fail", false);
             Assert.fail("No such frame " + e.getMessage());
         } catch (Exception e) {
-            ExtentManager.logStep("No such frame " + e.getMessage(), "fail", false);
+            logStep("No such frame " + e.getMessage(), "fail", false);
             Assert.fail("No such frame " + e.getMessage());
         }
 
@@ -826,12 +737,12 @@ public class WebDriverUtils implements WebDriverActions {
 
     public void switchToFrameUsingXPath(String xpath) {
         try {
-            getDriver().switchTo().frame(locateElement(getBy(Locators.XPATH, xpath)));
+            getDriver().switchTo().frame(locateElement(Locators.XPATH, xpath));
         } catch (NoSuchFrameException e) {
-            ExtentManager.logStep("No such frame " + e.getMessage(), "warning", false);
+            logStep("No such frame " + e.getMessage(), "warning", false);
             Assert.fail("No such frame " + e.getMessage());
         } catch (Exception e) {
-            ExtentManager.logStep("No such frame " + e.getMessage(), "fail", false);
+            logStep("No such frame " + e.getMessage(), "fail", false);
             Assert.fail("No such frame " + e.getMessage());
         }
 
@@ -842,10 +753,10 @@ public class WebDriverUtils implements WebDriverActions {
         try {
             getDriver().switchTo().frame(idOrName);
         } catch (NoSuchFrameException e) {
-            ExtentManager.logStep("No such frame " + e.getMessage(), "fail", false);
+            logStep("No such frame " + e.getMessage(), "fail", false);
             Assert.fail("No such frame " + e.getMessage());
         } catch (Exception e) {
-            ExtentManager.logStep("No such frame " + e.getMessage(), "fail", false);
+            logStep("No such frame " + e.getMessage(), "fail", false);
             Assert.fail("No such frame " + e.getMessage());
         }
     }
@@ -855,7 +766,7 @@ public class WebDriverUtils implements WebDriverActions {
         try {
             getDriver().switchTo().defaultContent();
         } catch (Exception e) {
-            ExtentManager.logStep("No such window " + e.getMessage(), "fail", false);
+            logStep("No such window " + e.getMessage(), "fail", false);
             Assert.fail("No such window " + e.getMessage());
         }
     }
@@ -863,10 +774,10 @@ public class WebDriverUtils implements WebDriverActions {
     @Override
     public boolean verifyUrl(String url) {
         if (getDriver().getCurrentUrl().equals(url)) {
-            ExtentManager.logStep("The url: " + url + " matched successfully", "info");
+            logStep("The url: " + url + " matched successfully", "info");
             return true;
         } else {
-            ExtentManager.logStep("The url: " + url + " not matched", "fail");
+            logStep("The url: " + url + " not matched", "fail");
             Assert.fail("The url: " + url + " not matched");
         }
         return false;
@@ -875,10 +786,10 @@ public class WebDriverUtils implements WebDriverActions {
     @Override
     public boolean verifyTitle(String title) {
         if (getDriver().getTitle().equals(title)) {
-            ExtentManager.logStep("Page title: " + title + " matched successfully", "info");
+            logStep("Page title: " + title + " matched successfully", "info");
             return true;
         } else {
-            ExtentManager.logStep("Page url: " + title + " not matched", "fail");
+            logStep("Page url: " + title + " not matched", "fail");
             Assert.fail("Page url: " + title + " not matched");
         }
         return false;
@@ -891,10 +802,10 @@ public class WebDriverUtils implements WebDriverActions {
             FileUtils.copyFile(getDriver().getScreenshotAs(OutputType.FILE),
                     new File("./" + ExtentManager.reportFolder + "/images/" + number + ".jpg"));
         } catch (WebDriverException e) {
-            ExtentManager.logStep("The browser has been closed." + e.getMessage(), "fail");
+            logStep("The browser has been closed." + e.getMessage(), "fail");
             Assert.fail("The browser has been closed." + e.getMessage());
         } catch (IOException e) {
-            ExtentManager.logStep("The snapshot could not be taken " + e.getMessage(), "warning");
+            logStep("The snapshot could not be taken " + e.getMessage(), "warning");
             Assert.fail("The snapshot could not be taken " + e.getMessage());
         }
         return number;
@@ -904,9 +815,9 @@ public class WebDriverUtils implements WebDriverActions {
     public void close() {
         try {
             getDriver().close();
-            ExtentManager.logStep("Browser is closed", "info", false);
+            logStep("Browser is closed", "info", false);
         } catch (Exception e) {
-            ExtentManager.logStep("Browser cannot be closed " + e.getMessage(), "fail", false);
+            logStep("Browser cannot be closed " + e.getMessage(), "fail", false);
             Assert.fail("Browser cannot be closed " + e.getMessage());
         }
     }
@@ -915,9 +826,9 @@ public class WebDriverUtils implements WebDriverActions {
     public void quit() {
         try {
             getDriver().quit();
-            ExtentManager.logStep("Browser is closed", "info", false);
+            logStep("Browser is closed", "info", false);
         } catch (Exception e) {
-            ExtentManager.logStep("Browser cannot be closed " + e.getMessage(), "fail", false);
+            logStep("Browser cannot be closed " + e.getMessage(), "fail", false);
             Assert.fail("Browser cannot be closed " + e.getMessage());
         }
     }
@@ -934,7 +845,7 @@ public class WebDriverUtils implements WebDriverActions {
             WebDriverWait wait = new WebDriverWait(getDriver(), Duration.ofSeconds(timeout));
             wait.until(ExpectedConditions.invisibilityOf(element));
         } catch (Exception e) {
-            ExtentManager.logStep("Element did not appear after " + timeout + " seconds", "fail", false);
+            logStep("Element did not appear after " + timeout + " seconds", "fail", false);
             Assert.fail("Element did not appear after " + timeout + " seconds");
         }
 
@@ -951,12 +862,12 @@ public class WebDriverUtils implements WebDriverActions {
     public void chooseDate(WebElement ele, String data) {
         try {
             getDriver().executeScript("arguments[0].setAttribute('value', '" + data + "')", ele);
-            ExtentManager.logStep("The Data :" + data + " entered Successfully", "pass");
+            logStep("The Data :" + data + " entered Successfully", "pass");
         } catch (ElementNotInteractableException e) {
-            ExtentManager.logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
+            logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
             Assert.fail("The Element " + ele + " is not Interactable \n" + e.getMessage());
         } catch (WebDriverException e) {
-            ExtentManager.logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
+            logStep("The Element " + ele + " is not Interactable \n" + e.getMessage(), "fail");
             Assert.fail("The Element " + ele + " is not Interactable \n" + e.getMessage());
         }
 
@@ -984,9 +895,9 @@ public class WebDriverUtils implements WebDriverActions {
             Thread.sleep(5000);
             robot.keyPress(KeyEvent.VK_ENTER);
             robot.keyRelease(KeyEvent.VK_ENTER);
-            ExtentManager.logStep("The file is selected Successfully", "pass");
+            logStep("The file is selected Successfully", "pass");
         } catch (Exception e) {
-            ExtentManager.logStep("The file is not selected", "fail");
+            logStep("The file is not selected", "fail");
             Assert.fail("The file is not selected");
         }
 
@@ -1016,9 +927,9 @@ public class WebDriverUtils implements WebDriverActions {
             Thread.sleep(5000);
             robot.keyPress(KeyEvent.VK_ENTER);
             robot.keyRelease(KeyEvent.VK_ENTER);
-            ExtentManager.logStep("The file is selected Successfully", "pass");
+            logStep("The file is selected Successfully", "pass");
         } catch (Exception e) {
-            ExtentManager.logStep("The file is not selected", "fail");
+            logStep("The file is not selected", "fail");
             Assert.fail("The file is not selected");
         }
 
