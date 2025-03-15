@@ -5,7 +5,6 @@ import com.automation.core.drivers.DriverManager;
 import com.automation.core.reporting.ExtentManager;
 import com.automation.core.web.WebDriverActions;
 import com.automation.core.web.WebDriverUtils;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
@@ -49,12 +48,16 @@ public class BasePage extends ExtentManager {
         actions.doubleClick(ele);
     }
 
-    protected void waitForApperance(WebElement element) {
-        actions.waitForApperance(element);
+    protected void waitForAppearance(WebElement element) {
+        actions.waitForAppearance(element);
     }
 
     protected void click(WebElement ele) {
         actions.click(ele);
+    }
+
+    protected void clickUsingJs(WebElement ele) {
+        actions.clickUsingJs(ele);
     }
 
     protected void clickWithNoSnap(WebElement ele) {
@@ -225,8 +228,8 @@ public class BasePage extends ExtentManager {
         actions.quit();
     }
 
-    protected void waitForDisapperance(WebElement element) {
-        actions.waitForDisapperance(element);
+    protected void waitForDisappearance(WebElement element) {
+        actions.waitForDisappearance(element);
     }
 
     protected void pause(int timeout) {

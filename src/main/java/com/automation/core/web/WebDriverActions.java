@@ -1,8 +1,8 @@
 package com.automation.core.web;
 
 import com.automation.core.design.Locators;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+
 import java.util.List;
 
 public interface WebDriverActions {
@@ -47,7 +47,7 @@ public interface WebDriverActions {
     void doubleTap(WebElement ele);
 
     /**
-     * Performs a double-click on the element.
+     * Performs a double click on the element.
      * @param ele The WebElement.
      */
     void doubleClick(WebElement ele);
@@ -56,7 +56,7 @@ public interface WebDriverActions {
      * Waits for an element to appear.
      * @param element The WebElement.
      */
-    void waitForApperance(WebElement element);
+    void waitForAppearance(WebElement element);
 
     /**
      * Clicks on a web element.
@@ -355,7 +355,7 @@ public interface WebDriverActions {
          * Waits for an element to disappear from the DOM.
          * @param element The WebElement to wait for.
          */
-        void waitForDisapperance(WebElement element);
+        void waitForDisappearance(WebElement element);
 
         /**
          * Pauses the execution for a specified duration.

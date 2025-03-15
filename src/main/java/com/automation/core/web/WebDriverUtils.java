@@ -37,8 +37,8 @@ public class WebDriverUtils extends ExtentManager implements WebDriverActions {
         try {
             val = ele.getAttribute(attributeValue);
         } catch (WebDriverException e) {
-            logStep("Attribue value not able to fetch :" + e.getMessage(), "info");
-            Assert.fail("Attribue value not able to fetch :" + e.getMessage());
+            logStep("Attribute value not able to fetch :" + e.getMessage(), "info");
+            Assert.fail("Attribute value not able to fetch :" + e.getMessage());
         }
         return val;
     }
@@ -48,9 +48,9 @@ public class WebDriverUtils extends ExtentManager implements WebDriverActions {
         act.moveToElement(ele).perform();
     }
 
-    public void dragAndDrop(WebElement eleSoutce, WebElement eleTarget) {
+    public void dragAndDrop(WebElement eleSource, WebElement eleTarget) {
         act = new Actions(getDriver());
-        act.dragAndDrop(eleSoutce, eleTarget).perform();
+        act.dragAndDrop(eleSource, eleTarget).perform();
     }
 
     public void contextClick(WebElement ele) {
@@ -76,7 +76,7 @@ public class WebDriverUtils extends ExtentManager implements WebDriverActions {
     }
 
 
-    public void waitForApperance(WebElement element) {
+    public void waitForAppearance(WebElement element) {
         long timeout = ConfigManager.getTimeOut();
         try {
             WebDriverWait wait = new WebDriverWait(getDriver(), Duration.ofSeconds(timeout));
@@ -387,8 +387,8 @@ public class WebDriverUtils extends ExtentManager implements WebDriverActions {
 
             }
         } catch (WebDriverException e) {
-            logStep("Unknown exception occured while verifying the Text \n" + e.getMessage(), "fail");
-            Assert.fail("Unknown exception occured while verifying the Text \n" + e.getMessage());
+            logStep("Unknown exception occurred while verifying the Text \n" + e.getMessage(), "fail");
+            Assert.fail("Unknown exception occurred while verifying the Text \n" + e.getMessage());
 
         }
 
@@ -405,8 +405,8 @@ public class WebDriverUtils extends ExtentManager implements WebDriverActions {
                 Assert.fail("The expected text doesn't contain the actual " + expectedText);
             }
         } catch (WebDriverException e) {
-            logStep("Unknown exception occured while verifying the Text \n" + e.getMessage(), "fail");
-            Assert.fail("Unknown exception occured while verifying the Text \n" + e.getMessage());
+            logStep("Unknown exception occurred while verifying the Text \n" + e.getMessage(), "fail");
+            Assert.fail("Unknown exception occurred while verifying the Text \n" + e.getMessage());
         }
         return false;
     }
@@ -421,8 +421,8 @@ public class WebDriverUtils extends ExtentManager implements WebDriverActions {
                 Assert.fail("The expected attribute :" + attribute + " value does not contains the actual " + value);
             }
         } catch (WebDriverException e) {
-            logStep("Unknown exception occured while verifying the Attribute Text \n" + e.getMessage(), "fail");
-            Assert.fail("Unknown exception occured while verifying the Attribute Text \n" + e.getMessage());
+            logStep("Unknown exception occurred while verifying the Attribute Text \n" + e.getMessage(), "fail");
+            Assert.fail("Unknown exception occurred while verifying the Attribute Text \n" + e.getMessage());
         }
         return false;
     }
@@ -438,8 +438,8 @@ public class WebDriverUtils extends ExtentManager implements WebDriverActions {
                 Assert.fail("The expected attribute :" + attribute + " value does not contains the actual " + value);
             }
         } catch (WebDriverException e) {
-            logStep("Unknown exception occured while verifying the Attribute Text \n" + e.getMessage(), "fail");
-            Assert.fail("Unknown exception occured while verifying the Attribute Text \n" + e.getMessage());
+            logStep("Unknown exception occurred while verifying the Attribute Text \n" + e.getMessage(), "fail");
+            Assert.fail("Unknown exception occurred while verifying the Attribute Text \n" + e.getMessage());
         }
 
     }
@@ -833,7 +833,7 @@ public class WebDriverUtils extends ExtentManager implements WebDriverActions {
         }
     }
 
-    public void waitForDisapperance(WebElement element) {
+    public void waitForDisappearance(WebElement element) {
         long timeout = ConfigManager.getTimeOut();
         try {
             Thread.sleep(5000);
