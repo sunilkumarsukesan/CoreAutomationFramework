@@ -532,7 +532,7 @@ public class WebDriverUtils extends ExtentManager implements WebDriverActions {
                 case XPATH:
                     return getDriver().findElement(By.xpath(value));
                 default:
-                    System.err.println("Locator is not Valid");
+                    logger.error("Locator is not Valid for " + value);
                     break;
             }
         } catch (NoSuchElementException e) {
@@ -545,14 +545,14 @@ public class WebDriverUtils extends ExtentManager implements WebDriverActions {
     @Override
     public WebElement locateElement(String value) {
         try {
-            WebElement findElementById = getDriver().findElement(By.id(value));
-            return findElementById;
+            WebElement findElementByXpath = getDriver().findElement(By.xpath(value));
+            return findElementByXpath;
         } catch (NoSuchElementException e) {
-            logStep("The Element with locator id Not Found with value: " + value + "\n" + e.getMessage(), "fail");
-            Assert.fail("The Element with locator id Not Found with value: " + value + "\n" + e.getMessage());
+            logStep("The Element with locator Xpath Not Found with value: " + value + "\n" + e.getMessage(), "fail");
+            Assert.fail("The Element with locator Xpath Not Found with value: " + value + "\n" + e.getMessage());
         } catch (Exception e) {
-            logStep("The Element with locator id Not Found with value: " + value + "\n" + e.getMessage(), "fail");
-            Assert.fail("The Element with locator id Not Found with value: " + value + "\n" + e.getMessage());
+            logStep("The Element with locator Xpath Not Found with value: " + value + "\n" + e.getMessage(), "fail");
+            Assert.fail("The Element with locator Xpath Not Found with value: " + value + "\n" + e.getMessage());
         }
         return null;
     }
@@ -578,7 +578,7 @@ public class WebDriverUtils extends ExtentManager implements WebDriverActions {
                 case XPATH:
                     return getDriver().findElements(By.xpath(value));
                 default:
-                    logger.info("Locator is not Valid");
+                    logger.error("Locator is not Valid for " + value);
                     break;
             }
         } catch (NoSuchElementException e) {

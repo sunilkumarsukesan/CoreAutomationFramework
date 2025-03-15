@@ -1,0 +1,26 @@
+<configuration>
+    <!-- Define current timestamp -->
+    <timestamp key="currentTime" datePattern="yyyy-MM-dd_HH-mm-ss"/>
+
+    <!-- Console Appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File Appender (Creates a new log file per execution) -->
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>logs/executionLog_${currentTime}.log</file>  <!-- Now correctly references ${currentTime} -->
+        <append>false</append>  <!-- Ensures a new log file is created each time -->
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Root Logger Configuration -->
+    <root level="info">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>
